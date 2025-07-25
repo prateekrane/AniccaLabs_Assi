@@ -44,7 +44,7 @@ const CreatePost = () => {
             image_urls: [imageUrl],
             author_id: authorId,
         };
-        console.log('Post payload:', postPayload);
+
         // Insert post into Supabase
         const { data: postData, error: postError } = await supabase
             .from('Posts')

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Image } from 'react-native';
 import { supabase } from '../supabase';
+
+// Placeholder image for tags without image
+const placeholderImg = require('../assets/logo.png');
 
 const SelectionTag = ({ visible, onClose, onSelectTags, initialSelected = [] }) => {
     const [tags, setTags] = useState([]);
@@ -38,24 +41,39 @@ const SelectionTag = ({ visible, onClose, onSelectTags, initialSelected = [] }) 
             <View style={styles.overlay}>
                 <View style={styles.modalContent}>
                     <Text style={styles.header}>Select up to 5 Tags</Text>
-                    <FlatList
-                        data={tags}
-                        keyExtractor={item => item.id?.toString()}
-                        numColumns={2}
-                        contentContainerStyle={styles.tagsContainer}
-                        renderItem={({ item }) => {
-                            const isSelected = selectedTags.some(t => t.id === item.id);
-                            return (
-                                <TouchableOpacity
-                                    style={[styles.tagChip, isSelected ? styles.tagChipSelected : styles.tagChipUnselected]}
-                                    onPress={() => handleTagPress(item)}
-                                    disabled={!isSelected && selectedTags.length >= 5}
-                                >
-                                    <Text style={[styles.tagText, isSelected ? styles.tagTextSelected : styles.tagTextUnselected]}>{item.name}</Text>
-                                </TouchableOpacity>
-                            );
-                        }}
-                    />
+                    <ScrollView contentContainerStyle={styles.tagsContainer} keyboardShouldPersistTaps="handled">
+                        <View style={styles.tagsRowWrap}>
+                            {tags.map(item => {
+                                const isSelected = selectedTags.some(t => t.id === item.id);
+                                // If your Tags table has an image field, use item.image_url, else use placeholder
+                                let imgUrl = item.image_url || null;
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[styles.tagChip, isSelected ? styles.tagChipSelected : styles.tagChipUnselected]}
+                                        onPress={() => handleTagPress(item)}
+                                        disabled={!isSelected && selectedTags.length >= 5}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.tagImageWrapper}>
+                                            <Image
+                                                source={imgUrl ? { uri: imgUrl } : placeholderImg}
+                                                style={styles.tagImage}
+                                                resizeMode="cover"
+                                            />
+                                        </View>
+                                        <Text
+                                            style={[styles.tagText, isSelected ? styles.tagTextSelected : styles.tagTextUnselected]}
+                                            numberOfLines={1}
+                                            ellipsizeMode="tail"
+                                        >
+                                            {item.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </ScrollView>
                     <TouchableOpacity
                         style={styles.doneButton}
                         onPress={handleDone}
@@ -76,16 +94,17 @@ export default SelectionTag;
 
 const styles = StyleSheet.create({
     overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(24,26,27,0.7)',
+        flex: 0.5,
+        backgroundColor: 'rgba(24,26,27,0.35)', // more transparent
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 250,
     },
     modalContent: {
         width: '85%',
         backgroundColor: '#23272A',
         borderRadius: 18,
-        padding: 24,
+        padding: 28,
         alignItems: 'center',
         shadowColor: '#00FF84',
         shadowOffset: { width: 0, height: 4 },
@@ -103,16 +122,27 @@ const styles = StyleSheet.create({
     tagsContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 18,
+        marginBottom: 12,
+        paddingHorizontal: 2,
+        flexGrow: 1,
+    },
+    tagsRowWrap: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
     },
     tagChip: {
-        paddingVertical: 10,
-        paddingHorizontal: 18,
-        borderRadius: 16,
-        margin: 8,
-        borderWidth: 1.5,
-        minWidth: 90,
+        width: 70,
+        height: 80,
+        borderRadius: 14,
+        margin: 3,
+        borderWidth: 1.2,
         alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
     },
     tagChipSelected: {
         backgroundColor: '#00FF84',
@@ -123,9 +153,26 @@ const styles = StyleSheet.create({
         borderColor: '#6ee7b7',
         opacity: 0.5,
     },
+    tagImageWrapper: {
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        overflow: 'hidden',
+        backgroundColor: '#23272A',
+        marginBottom: 3,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tagImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 10,
+    },
     tagText: {
-        fontSize: 15,
+        fontSize: 11,
         fontWeight: 'bold',
+        textAlign: 'center',
+        maxWidth: 60,
     },
     tagTextSelected: {
         color: '#181A1B',
@@ -134,33 +181,32 @@ const styles = StyleSheet.create({
         color: '#6ee7b7',
     },
     doneButton: {
-        width: '80%',
+        width: '55%',
         backgroundColor: '#00FF84',
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 8,
+        borderRadius: 7,
         alignItems: 'center',
-        marginTop: 8,
-        marginBottom: 8,
+        marginTop: 26,
+        marginBottom: 16,
     },
     doneButtonText: {
         color: '#181A1B',
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: 'bold',
         letterSpacing: 0.5,
     },
     closeButton: {
-        width: '80%',
+        width: '55%',
         backgroundColor: '#23272A',
-        paddingVertical: 10,
-        borderRadius: 8,
+        paddingVertical: 7,
+        borderRadius: 7,
         alignItems: 'center',
-        marginBottom: 4,
         borderWidth: 1,
         borderColor: '#6ee7b7',
     },
     closeButtonText: {
         color: '#6ee7b7',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });

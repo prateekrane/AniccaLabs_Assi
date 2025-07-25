@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, ActivityIndicator, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import SelectionTag from './SelectionTag';
 import React, { useEffect, useState } from 'react';
@@ -61,10 +61,10 @@ const PersonalisedFeedScreen = () => {
                 }
                 // Get unique postIds
                 const postIds = [...new Set(data.map(pt => pt.post_id))];
-                // Fetch posts with those ids
+                // Fetch posts with those ids, including Users.username
                 const { data: postsData } = await supabase
                     .from('Posts')
-                    .select('*')
+                    .select('*, Users(username)')
                     .in('id', postIds);
                 setTagPosts(postsData || []);
                 setLoadingTagPosts(false);
@@ -122,8 +122,8 @@ const PersonalisedFeedScreen = () => {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#181A1B', padding: 16, paddingTop: 34 }}>
-            <Text style={styles.header}>Your Content</Text>
+        <ScrollView style={{ flex: 1, backgroundColor: '#181A1B' }} contentContainerStyle={{ padding: 16, paddingTop: 34, paddingBottom: 32 }}>
+            <Text style={styles.header}>Your Feeds</Text>
             {loadingUserPosts ? (
                 <ActivityIndicator color="#00FF84" size="large" />
             ) : (
@@ -133,11 +133,14 @@ const PersonalisedFeedScreen = () => {
                     keyExtractor={item => item.id?.toString()}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={{ marginBottom: -380 }}
+                    style={{ marginBottom: 8 }}
+                    scrollEnabled={true}
+                    contentContainerStyle={{ gap: 12 }}
                 />
             )}
 
             <Text style={styles.header}>Interested Posts</Text>
+            {/* Move Select Tags button below Your Feeds */}
             <TouchableOpacity
                 style={styles.selectTagsButton}
                 onPress={() => setShowTagModal(true)}
@@ -146,15 +149,60 @@ const PersonalisedFeedScreen = () => {
                     {selectedTags.length === 0 ? 'Select Tags' : `Selected (${selectedTags.length})`}
                 </Text>
             </TouchableOpacity>
+            <View style={{ height: 18 }} />
             {loadingTagPosts ? (
                 <ActivityIndicator color="#00FF84" size="large" />
+            ) : tagPosts.length === 0 ? (
+                <Text style={styles.noTagPosts}>No posts found for selected tags.</Text>
             ) : (
                 <FlatList
                     data={tagPosts}
-                    renderItem={renderTagPost}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.tagPostCardVertical}
+                            activeOpacity={0.88}
+                            onPress={() => navigation.navigate('SpecificPost', {
+                                post_id: item.id,
+                                title: item.title,
+                                description: item.description,
+                                image_urls: item.image_urls,
+                                author: item.Users?.username || 'Unknown'
+                            })}
+                        >
+                            <View style={styles.tagPostImageWrapperVertical}>
+                                {(() => {
+                                    let imgUrl = '';
+                                    if (item.image_urls) {
+                                        if (Array.isArray(item.image_urls)) {
+                                            imgUrl = item.image_urls[0];
+                                        } else if (typeof item.image_urls === 'string') {
+                                            try {
+                                                const arr = JSON.parse(item.image_urls);
+                                                imgUrl = Array.isArray(arr) ? arr[0] : arr;
+                                            } catch {
+                                                imgUrl = item.image_urls;
+                                            }
+                                        }
+                                    }
+                                    return imgUrl ? (
+                                        <Image
+                                            source={{ uri: imgUrl }}
+                                            style={styles.tagPostImageVertical}
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <View style={styles.tagPostImagePlaceholderVertical} />
+                                    );
+                                })()}
+                            </View>
+                            <Text style={styles.tagPostTitleVertical} numberOfLines={2}>{item.title}</Text>
+                        </TouchableOpacity>
+                    )}
                     keyExtractor={item => item.id?.toString()}
                     showsVerticalScrollIndicator={false}
-                    style={{ marginTop: 12 }}
+                    contentContainerStyle={{ gap: 16, paddingBottom: 24 }}
+                    style={{ marginTop: 0, marginBottom: 16 }}
+                    scrollEnabled={false}
                 />
             )}
             <SelectionTag
@@ -163,7 +211,7 @@ const PersonalisedFeedScreen = () => {
                 onSelectTags={tags => setSelectedTags(tags)}
                 initialSelected={selectedTags}
             />
-        </View>
+        </ScrollView>
     );
 };
 
@@ -400,7 +448,7 @@ const styles = StyleSheet.create({
     },
     cardModernTitleRedesigned: {
         color: '#00FF84',
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: 'bold',
         marginHorizontal: 12,
         marginBottom: 14,
@@ -413,5 +461,62 @@ const styles = StyleSheet.create({
         textShadowColor: '#181A1B',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
+    },
+    noTagPosts: {
+        color: '#6ee7b7',
+        fontSize: 15,
+        textAlign: 'center',
+        marginTop: 12,
+        opacity: 0.7,
+    },
+    tagPostCardVertical: {
+        backgroundColor: '#23272A',
+        borderRadius: 16,
+        marginHorizontal: 0,
+        minWidth: 0,
+        maxWidth: '100%',
+        alignItems: 'center',
+        padding: 0,
+        borderWidth: 0,
+        shadowColor: '#00FF84',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
+        overflow: 'hidden',
+        marginBottom: 0,
+    },
+    tagPostImageWrapperVertical: {
+        width: '100%',
+        height: 120,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#181A1B',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tagPostImageVertical: {
+        width: '100%',
+        height: '100%',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+    },
+    tagPostImagePlaceholderVertical: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#23272A',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        borderWidth: 1,
+        borderColor: '#6ee7b7',
+    },
+    tagPostTitleVertical: {
+        color: '#00FF84',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginVertical: 12,
+        marginHorizontal: 12,
+        textAlign: 'center',
     },
 });

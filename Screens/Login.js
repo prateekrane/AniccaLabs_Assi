@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -12,12 +12,14 @@ const Login = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Missing Fields', 'Please enter both email and password.');
             return;
         }
+        setLoading(true);
         try {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
@@ -31,6 +33,7 @@ const Login = ({ navigation }) => {
         } catch (err) {
             Alert.alert('Login Error', err.message);
         }
+        setLoading(false);
     };
 
     const handleGoogleSignIn = async () => {
@@ -53,69 +56,83 @@ const Login = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.outerContainer}>
-            <View style={styles.header}>
-                <View style={styles.logoCircle}>
-                    <Image source={require("../assets/logo.png")} />
-                </View>
-                <Text style={styles.headerTitle}>Anicca Labs</Text>
-            </View>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <ScrollView
+                style={{ backgroundColor: '#181A1B' }}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
             >
-                <View style={styles.card}>
-                    <Text style={styles.title}>Login</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Email"
-                        placeholderTextColor="#6ee7b7"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
-                    <View style={styles.passwordContainer}>
+                <View style={styles.header}>
+                    <View style={styles.logoCircle}>
+                        <Image source={require("../assets/logo.png")} />
+                    </View>
+                    <Text style={styles.headerTitle}>Anicca Labs</Text>
+                </View>
+                <View style={styles.container}>
+                    <View style={styles.card}>
+                        <Text style={styles.title}>Login</Text>
                         <TextInput
-                            style={styles.passwordInput}
-                            placeholder="Password"
+                            style={styles.input}
+                            placeholder="Email"
                             placeholderTextColor="#6ee7b7"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
                         />
-                        <TouchableOpacity
-                            style={styles.eyeIcon}
-                            onPress={() => setShowPassword(!showPassword)}
-                            activeOpacity={0.7}
-                        >
-                            <Entypo name={showPassword ? "eye" : "eye-with-line"} size={22} color="#6ee7b7" />
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="Password"
+                                placeholderTextColor="#6ee7b7"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!showPassword}
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeIcon}
+                                onPress={() => setShowPassword(!showPassword)}
+                                activeOpacity={0.7}
+                            >
+                                <Entypo name={showPassword ? "eye" : "eye-with-line"} size={22} color="#6ee7b7" />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.85} disabled={loading}>
+                            <Text style={styles.loginButtonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+                        </TouchableOpacity>
+                        <View style={styles.dividerContainer}>
+                            <View style={styles.divider} />
+                            <Text style={styles.dividerText}>or</Text>
+                            <View style={styles.divider} />
+                        </View>
+                        <TouchableOpacity style={styles.googleSignInButton} onPress={handleGoogleSignIn} activeOpacity={0.85}>
+                            <Entypo name="google-" size={24} color="#00FF84" />
+                            <Text style={styles.googleSignInText}>Sign in with Google</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Text style={styles.forgotText}>Forgot Password?</Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.85}>
-                        <Text style={styles.loginButtonText}>Login</Text>
-                    </TouchableOpacity>
-                    <View style={styles.dividerContainer}>
-                        <View style={styles.divider} />
-                        <Text style={styles.dividerText}>or</Text>
-                        <View style={styles.divider} />
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Don't have an account?</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+                            <Text style={styles.signupText}>Sign Up</Text>
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.googleSignInButton} onPress={handleGoogleSignIn} activeOpacity={0.85}>
-                        <Entypo name="google-" size={24} color="#00FF84" />
-                        <Text style={styles.googleSignInText}>Sign in with Google</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <Text style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
                 </View>
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account?</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-                        <Text style={styles.signupText}>Sign Up</Text>
-                    </TouchableOpacity>
+            </ScrollView>
+            {loading && (
+                <View style={styles.loadingOverlay} pointerEvents="auto">
+                    <View style={styles.loadingBox}>
+                        <ActivityIndicator size="large" color="#00FF84" />
+                        <Text style={{ color: '#00FF84', marginTop: 12, fontWeight: 'bold' }}>Logging in...</Text>
+                    </View>
                 </View>
-            </KeyboardAvoidingView>
-        </View>
+            )}
+        </KeyboardAvoidingView>
     );
 };
 
@@ -124,6 +141,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#181A1B', // Black Reddit-style background
         justifyContent: 'center',
+    },
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        padding: 0,
     },
     header: {
         alignItems: 'center',
@@ -153,7 +175,6 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     container: {
-        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -287,6 +308,28 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginLeft: 6,
         textDecorationLine: 'underline',
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(24,26,27,0.55)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+    },
+    loadingBox: {
+        backgroundColor: '#23272A',
+        borderRadius: 16,
+        padding: 32,
+        alignItems: 'center',
+        shadowColor: '#00FF84',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        elevation: 8,
     },
 });
 

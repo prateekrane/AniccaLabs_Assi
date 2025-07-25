@@ -41,6 +41,12 @@ const AllScreen = ({ navigation }) => {
                 }
             }
         }
+        // Truncate description to 80 characters
+        const maxDescLen = 80;
+        let shortDesc = item.description;
+        if (shortDesc && shortDesc.length > maxDescLen) {
+            shortDesc = shortDesc.slice(0, maxDescLen) + '...';
+        }
         return (
             <TouchableOpacity
                 style={styles.card}
@@ -61,7 +67,7 @@ const AllScreen = ({ navigation }) => {
                     </View>
                 )}
                 <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.description}>{item.description}</Text>
+                <Text style={styles.description}>{shortDesc}</Text>
                 <Text style={styles.author}>By: {item.Users?.username || 'Unknown'}</Text>
             </TouchableOpacity>
         );

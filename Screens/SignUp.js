@@ -12,6 +12,7 @@ const SignUp = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
 
     const handleSignUp = async () => {
@@ -19,6 +20,7 @@ const SignUp = ({ navigation }) => {
             Alert.alert('Missing Fields', 'Please enter both email and password.');
             return;
         }
+        setLoading(true);
         try {
             const response = await supabase.auth.signUp({
                 email,
@@ -68,6 +70,7 @@ const SignUp = ({ navigation }) => {
         } catch (err) {
             Alert.alert('Sign Up Error', err.message);
         }
+        setLoading(false);
     };
     // Utility function to remove user id from AsyncStorage (for logout)
     const logoutAndRemoveId = async (navigation) => {
@@ -148,8 +151,8 @@ const SignUp = ({ navigation }) => {
                                     <Entypo name={showPassword ? "eye" : "eye-with-line"} size={22} color="#6ee7b7" />
                                 </TouchableOpacity>
                             </View>
-                            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={0.85}>
-                                <Text style={styles.signUpButtonText}>Sign Up</Text>
+                            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} activeOpacity={0.85} disabled={loading}>
+                                <Text style={styles.signUpButtonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
                             </TouchableOpacity>
                             <View style={styles.dividerContainer}>
                                 <View style={styles.divider} />
@@ -170,6 +173,14 @@ const SignUp = ({ navigation }) => {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            {loading && (
+                <View style={styles.loadingOverlay} pointerEvents="auto">
+                    <View style={styles.loadingBox}>
+                        <Entypo name="cycle" size={32} color="#00FF84" style={{ marginBottom: 8 }} />
+                        <Text style={{ color: '#00FF84', marginTop: 12, fontWeight: 'bold' }}>Signing up...</Text>
+                    </View>
+                </View>
+            )}
         </View>
     );
 };
@@ -336,6 +347,28 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginLeft: 6,
         textDecorationLine: 'underline',
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(24,26,27,0.55)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+    },
+    loadingBox: {
+        backgroundColor: '#23272A',
+        borderRadius: 16,
+        padding: 32,
+        alignItems: 'center',
+        shadowColor: '#00FF84',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        elevation: 8,
     },
 });
 

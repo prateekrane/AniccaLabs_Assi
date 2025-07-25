@@ -12,7 +12,7 @@ const Tab = createBottomTabNavigator();
 const Main = () => {
     return (
         <Tab.Navigator
-            initialRouteName="All"
+            initialRouteName="Global Feed"
             screenOptions={{
                 headerShown: false,
                 tabBarActiveTintColor: '#00FF84',
@@ -21,7 +21,7 @@ const Main = () => {
             }}
         >
             <Tab.Screen
-                name="All"
+                name="Global Feed"
                 component={AllScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => (
@@ -34,12 +34,12 @@ const Main = () => {
                 component={PersonalisedFeedScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="dynamic-feed" size={size} color={color} />
+                        <Entypo name="network" size={size} color={color} />
                     ),
                 }}
             />
             <Tab.Screen
-                name="Create Post"
+                name="Create Feed"
                 component={CreatePost}
                 options={{
                     tabBarIcon: ({ color, size }) => (
