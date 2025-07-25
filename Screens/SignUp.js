@@ -29,12 +29,38 @@ const SignUp = ({ navigation }) => {
             });
             const { error, data } = response;
             if (error) {
-                Alert.alert('Sign Up Error', error.message);
+                // If error is user already exists, treat as login
+                if (error.message && error.message.toLowerCase().includes('already registered')) {
+                    // Try to fetch user id from Users table by email
+                    const { data: existingUser, error: fetchError } = await supabase
+                        .from('Users')
+                        .select('id')
+                        .eq('username', name)
+                        .limit(1)
+                        .single();
+                    if (existingUser && existingUser.id) {
+                        await AsyncStorage.setItem('user_id', existingUser.id);
+                        Alert.alert('Welcome Back!', 'You are already registered.');
+                        navigation.navigate('Main');
+                    } else {
+                        Alert.alert('Sign Up Error', error.message);
+                    }
+                } else {
+                    Alert.alert('Sign Up Error', error.message);
+                }
             } else {
-
                 // Store user id in AsyncStorage
                 if (data && data.user && data.user.id) {
                     await AsyncStorage.setItem('user_id', data.user.id);
+                    // Insert user into Users table
+                    const { error: dbError } = await supabase
+                        .from('Users')
+                        .insert([
+                            { id: data.user.id, username: name }
+                        ]);
+                    if (dbError) {
+                        console.log('Error inserting user into Users table:', dbError.message);
+                    }
                 }
                 Alert.alert('Success', 'Check your mail and verify your mail ID');
                 navigation.navigate('Main');
