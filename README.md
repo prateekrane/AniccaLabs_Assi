@@ -4,8 +4,8 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd <your-repo-folder>
+   git clone https://github.com/prateekrane/AniccaLabs_Assi
+   cd AniccaLabs_Assi
    ```
 2. **Install dependencies:**
    ```bash
