@@ -46,7 +46,7 @@ const AllScreen = ({ navigation }) => {
                 style={styles.card}
                 activeOpacity={0.85}
                 onPress={() => navigation.navigate('SpecificPost', {
-                    id: item.id,
+                    post_id: item.id,
                     title: item.title,
                     description: item.description,
                     image_urls: item.image_urls,

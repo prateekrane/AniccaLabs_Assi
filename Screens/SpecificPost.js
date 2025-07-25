@@ -1,8 +1,12 @@
-import { StyleSheet, Text, View, Image, ScrollView } from 'react-native';
-import React from 'react';
+import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import Entypo from '@expo/vector-icons/Entypo';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../supabase';
 
 const SpecificPost = ({ route }) => {
-    const { title, description, image_urls, author } = route.params || {};
+    const { post_id, title, description, image_urls, author } = route.params || {};
+    const [bookmarked, setBookmarked] = useState(false);
     let imageUrl = null;
     if (image_urls) {
         if (Array.isArray(image_urls)) {
@@ -20,6 +24,25 @@ const SpecificPost = ({ route }) => {
             }
         }
     }
+
+    useEffect(() => {
+        // On mount, check if this post is already bookmarked by this user
+        const checkBookmarked = async () => {
+            try {
+                const user_id = await AsyncStorage.getItem('user_id');
+                if (!user_id || !post_id) return;
+                const { data, error } = await supabase
+                    .from('Post_upvotes')
+                    .select('id')
+                    .eq('user_id', user_id)
+                    .eq('post_id', post_id)
+                    .single();
+                if (data && !error) setBookmarked(true);
+            } catch { }
+        };
+        checkBookmarked();
+    }, [post_id]);
+
     return (
         <ScrollView contentContainerStyle={styles.outerContainer}>
             <View style={styles.card}>
@@ -34,6 +57,47 @@ const SpecificPost = ({ route }) => {
                 <View style={styles.authorRow}>
                     <Text style={styles.authorLabel}>Author:</Text>
                     <Text style={styles.author}>{author}</Text>
+                    <TouchableOpacity
+                        style={styles.bookmarkIconInline}
+                        onPress={async () => {
+                            try {
+                                const user_id = await AsyncStorage.getItem('user_id');
+                                if (!user_id || !post_id) {
+                                    Alert.alert('Error', 'User or Post ID missing');
+                                    return;
+                                }
+                                if (!bookmarked) {
+                                    // Bookmark (insert)
+                                    const { error } = await supabase
+                                        .from('Post_upvotes')
+                                        .insert([{ post_id, user_id }]);
+                                    if (error) {
+                                        Alert.alert('Error', error.message);
+                                    } else {
+                                        setBookmarked(true);
+                                        Alert.alert('Success', 'Post bookmarked!');
+                                    }
+                                } else {
+                                    // Un-bookmark (delete)
+                                    const { error } = await supabase
+                                        .from('Post_upvotes')
+                                        .delete()
+                                        .eq('post_id', post_id)
+                                        .eq('user_id', user_id);
+                                    if (error) {
+                                        Alert.alert('Error', error.message);
+                                    } else {
+                                        setBookmarked(false);
+                                        Alert.alert('Success', 'Bookmark removed!');
+                                    }
+                                }
+                            } catch (e) {
+                                Alert.alert('Error', e.message);
+                            }
+                        }}
+                    >
+                        <Entypo name="bookmark" size={24} color={bookmarked ? '#00FF84' : '#fff'} />
+                    </TouchableOpacity>
                 </View>
                 <View style={styles.divider} />
                 <Text style={styles.description}>{description}</Text>
@@ -118,5 +182,13 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         marginBottom: 8,
         lineHeight: 24,
+    },
+    bookmarkIconInline: {
+        marginLeft: 10,
+        padding: 2,
+        backgroundColor: 'rgba(24,26,27,0.85)',
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

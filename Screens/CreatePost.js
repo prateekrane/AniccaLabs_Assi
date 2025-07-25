@@ -11,6 +11,7 @@ const CreatePost = () => {
     const [loading, setLoading] = useState(false);
     const [tags, setTags] = useState([]);
     const [selectedTag, setSelectedTag] = useState(null);
+    const [tagMap, setTagMap] = useState({}); // { name: id }
 
     useEffect(() => {
         const getAuthorId = async () => {
@@ -18,9 +19,12 @@ const CreatePost = () => {
             if (id) setAuthorId(id);
         };
         const fetchTags = async () => {
-            const { data, error } = await supabase.from('Tags').select('name');
+            const { data, error } = await supabase.from('Tags').select('id, name');
             if (!error && data) {
                 setTags(data.map(tag => tag.name));
+                const map = {};
+                data.forEach(tag => { map[tag.name] = tag.id; });
+                setTagMap(map);
             }
         };
         getAuthorId();
@@ -33,21 +37,39 @@ const CreatePost = () => {
             return;
         }
         setLoading(true);
+        // Log the data being sent to Posts table
+        const postPayload = {
+            title: title,
+            description: description,
+            image_urls: [imageUrl],
+            author_id: authorId,
+        };
+        console.log('Post payload:', postPayload);
         // Insert post into Supabase
-        const { error } = await supabase
+        const { data: postData, error: postError } = await supabase
             .from('Posts')
+            .insert([postPayload])
+            .select();
+        if (postError || !postData || !postData[0]) {
+            setLoading(false);
+            Alert.alert('Error Got', postError ? postError.message : 'Post creation failed.');
+            return;
+        }
+        // Get post_id and tag_id
+        const post_id = postData[0].id;
+        const tag_id = tagMap[selectedTag];
+        // Insert into Post_tags
+        const { error: postTagError } = await supabase
+            .from('Post_tags')
             .insert([
                 {
-                    title,
-                    description,
-                    image_urls: [imageUrl],
-                    author_id: authorId,
-                    tag: selectedTag,
+                    post_id,
+                    tag_id,
                 },
             ]);
         setLoading(false);
-        if (error) {
-            Alert.alert('Error', error.message);
+        if (postTagError) {
+            Alert.alert('Error', postTagError.message);
         } else {
             Alert.alert('Success', 'Post created successfully!');
             setTitle('');

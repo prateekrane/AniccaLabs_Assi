@@ -5,27 +5,7 @@ import { Entypo, MaterialIcons } from '@expo/vector-icons';
 import AllScreen from './AllScreen';
 import PersonalisedFeedScreen from './PersonalisedFeedScreen';
 import CreatePost from './CreatePost';
-
-function ProfileScreen({ navigation }) {
-    const handleLogout = async () => {
-        await AsyncStorage.removeItem('user_id');
-        navigation.replace('Login');
-    };
-    return (
-        <View style={styles.tabContainer}>
-            <Text style={styles.tabTitle}>Profile</Text>
-            <View style={{ marginTop: 24 }}>
-                <Text style={styles.profileText}>User Profile Info Here</Text>
-                <View style={{ marginTop: 24 }}>
-                    <Text style={styles.logoutLabel}>Logout</Text>
-                    <View style={{ marginTop: 8 }}>
-                        <Text style={styles.logoutButton} onPress={handleLogout}>Logout</Text>
-                    </View>
-                </View>
-            </View>
-        </View>
-    );
-}
+import Profile from './Profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -69,7 +49,7 @@ const Main = () => {
             />
             <Tab.Screen
                 name="Profile"
-                component={ProfileScreen}
+                component={Profile}
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Entypo name="user" size={size} color={color} />
